@@ -17,6 +17,8 @@
  * @author Emiliano Noli <noliemiliano@gmail.com>
  * @package GTE_Renapi_Api
  */
+namespace RestEnApi;
+
 class Renapi{
     private $service_name;
     private $requested_method = null;

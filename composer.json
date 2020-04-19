@@ -2,7 +2,7 @@
     "name": "limado/restenapi",
     "type": "framework",
     "description": "Really litle framework to easily create restfull api.",
-    "keywords": ["rest","restfull","api","noli"],
+    "keywords": ["rest","restfull","api"],
     "homepage": "https://eminoli.com",
     "license": "MIT",
     "authors": [
@@ -18,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "RestEnApi\\": "core"
+            "RestEnApi\\": "core/"
         }
     }
 }
