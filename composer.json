@@ -1,0 +1,16 @@
+{
+    "name": "eminoli/renapi",
+    "type": "framework",
+    "description": "Really litle framework to creat restfull api.",
+    "keywords": ["rest","restfull","api","noli"],
+    "homepage": "https://eminoli.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Emiliano Noli",
+            "email": "noliemiliano@gmail.com",
+            "homepage": "http://eminoli.com",
+            "role": "Developer/Owner"
+        }
+    ]
+}
