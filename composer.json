@@ -17,10 +17,8 @@
         "php": ">=5.3.0"
     },
     "autoload": {
-        "autoload": {
-            "psr-4": {
-                "restenapi": "restenapi"
-            }
+        "psr-4": {
+            "RestEnApi": "core"
         }
     }
 }
