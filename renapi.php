@@ -5,7 +5,7 @@ header('Content-Type: text/html; charset=iso-8859-1');
 ini_set("display_errors", 1);
 
 ob_start(); //output buffering
-include("./restenapi/renapi.php");
+include("./core/renapi.php");
 include("apiFunctions.php");
 /** How to configure Renapi server and functions */
 $server = new Renapi();
