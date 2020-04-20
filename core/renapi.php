@@ -17,7 +17,13 @@
  * @author Emiliano Noli <noliemiliano@gmail.com>
  * @package GTE_Renapi_Api
  */
+
 namespace RestEnApi;
+/**
+ * 
+ * Creation: 23/08/2013
+ * Modification: 13/04/2020
+ */
 
 class Renapi{
     private $service_name;
@@ -28,8 +34,11 @@ class Renapi{
     private $parameters_received_from_request_uri = array();
     private $parameters_from_uri = false;
     private  $json_error = true;    
+    public $model = "";
+
     function __construct($name="Renapi api server"){ 
         $this->service_name = $name;
+        $this->setRequestedModel();
     }
     
     /**
@@ -74,6 +83,18 @@ class Renapi{
         }
     }
     /**
+     * Gets the requested model from RQUEST_URI to serve require models
+     */
+    private function setRequestedModel(){
+        $script_name = str_replace('.php','/', $_SERVER['SCRIPT_NAME']);
+        $arr = explode($script_name, $_SERVER['REQUEST_URI']);
+        if(count($arr)>1){
+            $arr = explode('/',$arr[1]);
+            $fname = ($arr[0] == "" ? "api" : $arr[0]);
+            $this->model = $fname;
+        } 
+    }
+    /**
      * Gets the requested function from RQUEST_URI
      */
     private function setRequestedFunction(){
@@ -93,7 +114,7 @@ class Renapi{
         }
         $this->requested_function = $fname;
     }
-    
+
     /**
      * Search for an specific header and returns its value or false.
      * @param string $h

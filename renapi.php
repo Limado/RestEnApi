@@ -6,28 +6,29 @@ ini_set("display_errors", 1);
 
 ob_start(); //output buffering
 include("./core/renapi.php");
+
 include("apiFunctions.php");
 /** How to configure Renapi server and functions */
-$server = new Renapi();
+$server = new RestEnApi\Renapi();
 
 /** JSON from body definition, if header Content-Type = application/json is present */
 
 $parametros = array("body" => "json");
 $description = "This function receives parameters from the body.";
 $returnDescription = "Json";
-$function = new RenapiFunction("user_post", "POST",$parametros,$returnDescription,$description);
+$function = new RestEnApi\RenapiFunction("user_post", "POST",$parametros,$returnDescription,$description);
 $server->registerFunction($function);
 
 $parametros = array("id" => "int");
 $description = "This function receives parameters from the body.";
 $returnDescription = "Json";
-$function = new RenapiFunction("user_get", "GET",$parametros,$returnDescription,$description);
+$function = new RestEnApi\RenapiFunction("user_get", "GET",$parametros,$returnDescription,$description);
 $server->registerFunction($function);
 
 $parametros = array("id" => "int");
 $description = "This function receives parameters from the body.";
 $returnDescription = "Json";
-$function = new RenapiFunction("user_delete", "GET",$parametros,$returnDescription,$description);
+$function = new RestEnApi\RenapiFunction("user_delete", "GET",$parametros,$returnDescription,$description);
 $server->registerFunction($function);
 
 /** JSON from body definition, if header Content-Type = application/json is present */
@@ -35,7 +36,7 @@ $server->registerFunction($function);
 $parametros = array("body" => "json");
 $description = "This function receives parameters from the body.";
 $returnDescription = "Json";
-$function = new RenapiFunction("user_put", "PUT",$parametros,$returnDescription,$description);
+$function = new RestEnApi\RenapiFunction("user_put", "PUT",$parametros,$returnDescription,$description);
 $server->registerFunction($function);
 /***************************************************************/
 $server->start();
