@@ -1,0 +1,57 @@
+{
+    "uri": "restapi/api",
+    "models": [
+        {
+            "name": "config",
+            "actions": [
+                {
+                    "name": "describe",
+                    "method": "GET",
+                    "description": "Call this action with GET method to get a full list of models and actions available in you configuration",
+                    "returnDescription": "json"
+                }
+            ]
+        },
+        {
+            "name": "model",
+            "actions": [
+                {
+                    "name": "get",
+                    "method": "GET",
+                    "params": [
+                        {
+                            "name": "id",
+                            "type": "integer"
+                        }
+                    ],
+                    "description": "Call this action with GET method and send an id in URI (url/demo/id)",
+                    "returnDescription": "json"
+                },
+                {
+                    "name": "post",
+                    "method": "POST",
+                    "description": "Call this action with POST method and and json in the body",
+                    "returnDescription": "json"
+                },
+                {
+                    "name": "put",
+                    "method": "PUT",
+                    "description": "Call this action with PUT method and and json in the body",
+                    "returnDescription": "json"
+                },
+                {
+                    "name": "patch",
+                    "method": "PATCH",
+                    "description": "Confirma la registracion de un usuario",
+                    "returnDescription": "json"
+                },
+                {
+                    "name": "delete",
+                    "method": "DELETE",
+                    "description": "Call this action with GET method and send an id in URI (url/demo/id)",
+                    "returnDescription": "json"
+                }
+            ]
+        }
+    ]
+}

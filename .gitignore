@@ -49,3 +49,7 @@ Temporary Items
 
 #visual studio code
 .vscode/
+
+#composer
+/vendor
+composer.lock
