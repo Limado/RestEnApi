@@ -53,3 +53,8 @@ Temporary Items
 #composer
 /vendor
 composer.lock
+
+#home files not working
+/core/home.css
+/core/home.js
+/core/home.php

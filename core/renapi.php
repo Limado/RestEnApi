@@ -8,6 +8,7 @@
 
 namespace RestEnApi;
 
+require 'utils.php';
 class Renapi
 {
     private $service_name;
@@ -20,7 +21,8 @@ class Renapi
     private $json_error = true;
     public $model = "";
     private $sendResponse;
-
+    private $debug = false;
+    private $logger;
     /**
      * Instancia Renapi.
      * Setea el nombre y los actions y models dispoible.
@@ -28,11 +30,16 @@ class Renapi
      * @param json $config
      * @param string $name
      */
-    public function __construct($config, $name = "Renapi api server")
+    public function __construct($config, $debug = false, $name = "Renapi api server")
     {
+        $this->debug = $debug;
+        $this->logger = ApiLogger::getInstance();
+        $this->logger->setPath(realpath(dirname(__FILE__, 5)) . '/logs/');
 
+        $this->debug("fn: Renapi->__construct: {$name} init. Debug mode = {$debug}.");
         $this->service_name = $name;
         $this->baseUri = $config->uri;
+        $this->debug("fn: Renapi->__construct: Base uri: {$config->uri}.");
         $this->sendResponse = array($this, 'sendResponseFunction');
         $this->setRequestedModelAndFunction();
         $this->setActions($config);
@@ -45,11 +52,14 @@ class Renapi
      */
     public function start()
     {
+        $this->debug("fn: Renapi->start called.");
         if ($this->posibleInjection()) {
+            $this->error("fn: Renapi->start. Posible injection error.");
             print RenapiError::injectionError();
         }
 
         if (!isset($_SERVER['REQUEST_METHOD'])) {
+            $this->error("fn: Renapi->start. No se encontro ningun metodo en la llamada (GET/POST/PUT/DELETE)");
             print RenapiError::genericError("No se encontro ningun metodo en la llamada (GET/POST/PUT/DELETE)");
             die();
         }
@@ -57,17 +67,21 @@ class Renapi
             $function = $this->functions[$this->requested_function];
 
             if ($this->requested_method != $function->method()) {
+                $this->error("fn: Renapi->start method call error. Requested: {$this->requested_method} function accepts: {$function->method()} .");
                 print RenapiError::methodCallError($function, $this->requested_method);
                 die();
             }
             $parameters = $function->parameters();
-
-            if ($this->getHeader('Content-Type') == "application/json") {
+            $contentType = $this->getHeader('Content-Type');
+            if ($contentType == "application/json") {
+                $this->debug("fn: Renapi->start. Content-Type: application/json");
                 $this->prepareJsonParameter($function);
             } else {
+                $this->debug("fn: Renapi->start. Content-Type: " . $contentType);
                 $this->prepareParameters($function);
             }
         } else {
+            $this->debug("fn: Renapi->start. InvalidFunction error : " . $this->requested_function);
             print RenapiError::invalidFunctionError($this->requested_function);
             die();
         }
@@ -97,12 +111,18 @@ class Renapi
      */
     private function setRequestedModelAndFunction()
     {
+
         $script_name = str_replace('.php', '/', $_SERVER['SCRIPT_NAME']);
         $this->requested_method = $_SERVER['REQUEST_METHOD'];
         $method = strtolower($this->requested_method);
-
         $rURI = (isset($_SERVER['REDIRECT_URL']) ? $_SERVER['REDIRECT_URL'] : $_SERVER['REQUEST_URI']);
         // $rURI .= (isset($_SERVER['REDIRECT_QUERY_STRING']) ? $_SERVER['REDIRECT_QUERY_STRING'] : "");
+        $debugMessage = array("fn: Renapi->setRequestedModelAndFunction:",
+            '_SERVER["SCRIPT_NAME"] => ' . $script_name,
+            '_SERVER["REQUEST_METHOD"] => ' . $method,
+            '_SERVER["REDIRECT_URL/REQUEST_URI"] => ' . $rURI,
+        );
+        $this->debug($debugMessage);
 
         $arr = explode($script_name, $rURI);
         if (count($arr) > 1) {
@@ -127,6 +147,13 @@ class Renapi
             $fname = "describe";
         }
         $this->requested_function = $fname;
+
+        $debugMessage = array("fn: Renapi->setRequestedModelAndFunction:",
+            'requested_function => ' . $fname,
+            'parameters_received_from_request_uri => ' . implode(" | ", $this->parameters_received_from_request_uri),
+            'parameters_from_uri => ' . $this->parameters_from_uri,
+        );
+        $this->debug($debugMessage);
     }
 
     /**
@@ -142,35 +169,57 @@ class Renapi
             if ($header == $h) {
                 return $value;
             }
-
         }
         return false;
     }
     /**
-     * Imprime el error en el formato especificado para el servicio (Plano o Json) y corta la ejecucion.
+     * Loguea un error.
      * @param string $messaje
      * @param mixed $codigo
      * @return void
      */
-    public function error()
+    private function error()
     {
-        if ($this->json_error) {
-            $error = array("error" => true, "code" => $codigo, "description" => $messaje);
-            print json_encode($error);
-        } else {
-            print $messaje;
-        }
-        die();
+        $this->logger->write($message, "ERROR");
     }
-
     /**
-     * imprime pantalla con informacion de los metodos
-     * deprecated
+     * Loguea informacion util, si esta habilitado el debug
+     *
+     * @param [type] $message
      * @return void
      */
-    private function printHome()
+    private function info($message)
     {
-        include "home.php";
+        $this->debug($message, "INFO");
+    }
+    /**
+     * Loguea advertencias, si esta habilitado el debug
+     *
+     * @param [type] $message
+     * @return void
+     */
+    private function warning($message)
+    {
+        $this->debug($message, "WARNING");
+    }
+    /**
+     * Loguea todo el recorrido del llamado, si esta habilitado el debug
+     *
+     * @param [type] $message
+     * @return void
+     */
+    private function debug($messages, $level = "DEBUG")
+    {
+        if ($this->debug) {
+            if (!is_array($messages)) {
+                $messages = array($messages);
+            }
+            $message = "";
+            foreach ($messages as $msg) {
+                $message .= $msg . PHP_EOL;
+            }
+            $this->logger->write($message, $level);
+        }
     }
     /**
      * Si el header Content-Type:application/json está presente, toma el json del body y lo envia a la función definida.
@@ -180,12 +229,15 @@ class Renapi
 
     public function prepareJsonParameter($function)
     {
+        
         $entityBody = file_get_contents('php://input');
+        $this->debug(["fn: Renapi->prepareJsonParameter.", "Received body." . $entityBody]);
         if ($entityBody == "") {
             $this->parameters[] = '';
         } elseif ($this->validateParameter($entityBody, 'json')) {
             $this->parameters[] = $entityBody;
         } else {
+            $this->error("fn: Renapi->prepareJsonParameter. Invalid parameter type. Name: {$name} type: {$type}");
             print RenapiError::invalidParameterTypeError($name, $type);
             die();
         }
@@ -213,6 +265,7 @@ class Renapi
 
         $function_param_count = count($function->parameters());
         if ($param_received < $function_param_count) {
+            $this->error("fn: Renapi->prepareParameters. Parameter count error. Function: " . $function->name() . " expected: {$function_param_count}, received: {$param_received}");
             print RenapiError::paramaterCountError($function->name(), $function_param_count, $param_received, $_PARAMS);
             die();
         }
@@ -224,6 +277,7 @@ class Renapi
             /** Parameters from GET/POST */
             foreach ($_PARAMS as $name => $value) {
                 if (!array_key_exists($name, $function->parameters()) && !array_key_exists($name, $function->optionalParameters())) {
+                    $this->error("fn: Renapi->prepareParameters. Invalid parameter. Function: " . $function->name() . " parameter name: {$name}");
                     print RenapiError::invalidParameterError($name, $function->name());
                     die();
                 }
@@ -234,6 +288,7 @@ class Renapi
             // Valido nuevamente, por si llego la cantidad necesaria pero con nombres distintos.
             $param_added = count($this->parameters);
             if ($param_added < $function_param_count) {
+                $this->error("fn: Renapi->prepareParameters. Parameter count error. Function: " . $function->name() . " expected: {$function_param_count}, received: {$param_added}");
                 print RenapiError::paramaterCountError($function->name(), $function_param_count, $param_added, $this->parameters);
                 die();
             }
@@ -254,6 +309,7 @@ class Renapi
                 if ($this->validateParameter($value, $type)) {
                     $this->parameters[$name] = $value;
                 } else {
+                    $this->error("fn: Renapi->validateParameterByName. Invalid parameter type. Name: {$name} type: {$type}");
                     print RenapiError::invalidParameterTypeError($name, $type);
                     die();
                 }
@@ -273,6 +329,7 @@ class Renapi
             if ($this->validateParameter($value, $type)) {
                 $this->parameters[$i] = $value;
             } else {
+                $this->error("fn: Renapi->validateParameterByKey. Invalid parameter type. Name: {$name} type: {$type}");
                 print RenapiError::invalidParameterTypeError($name, $type);
                 die();
             }
@@ -340,6 +397,8 @@ class Renapi
         // $returnDescription = "Json";
         // $function = new RenapiFunction("describe", "GET",$parameters,$returnDescription,$description);
         // $server->registerFunction($function);
+        $debugMessage = array("fn: Renapi->setActions:");
+
         foreach ($config->models as $model) {
 
             if ($this->model == $model->name) {
@@ -348,11 +407,13 @@ class Renapi
                     $parameters = isset($action->params) ? $action->params : null;
                     $description = isset($action->description) ? $action->description : null;
                     $returnDescription = isset($action->returnDescription) ? $action->returnDescription : null;
+                    $debugMessage[] = "Registering {$model->name}->{$action->name} method {$action->method}";
                     $function = new RenapiFunction($action->name, $action->method, $parameters, $description, $returnDescription);
                     $this->registerFunction($function);
                 }
             }
         }
+        $this->debug($debugMessage);
     }
     /**
      * Registra una funcion en la api, si esta mal configurada devuelve el error correspondiente.
@@ -361,6 +422,9 @@ class Renapi
     public function registerFunction($function)
     {
         if ($function->isValid() == false) {
+            $debugMessage = array("fn: Renapi->registerFunction:");
+            $debugMessage[] = $function->message();
+            $this->debug($debugMessage);
             die($function->message());
         } else {
             $this->functions[$function->name()] = $function;
@@ -481,6 +545,7 @@ class Renapi
         }
         return false;
     }
+
 }
 
 /**
