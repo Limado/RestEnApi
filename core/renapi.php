@@ -101,9 +101,7 @@ class Renapi
         if ($die) {
             die();
         }
-
     }
-
     /**
      * Gets the requested function from RQUEST_URI
      *
@@ -165,8 +163,10 @@ class Renapi
     private function getHeader($h)
     {
         /** apache_request_headers alias - native PHP fucntion */
-        foreach (getallheaders() as $header => $value) {
-            if ($header == $h) {
+        $reqHeaders = getallheaders();
+        $this->debug($reqHeaders);
+        foreach ($reqHeaders as $header => $value) {
+            if (strtolower($header) == strtolower($h)) {
                 return $value;
             }
         }
@@ -216,6 +216,7 @@ class Renapi
             }
             $message = "";
             foreach ($messages as $msg) {
+                $msg = (is_array($msg) ? var_export($msg, true) : $msg);
                 $message .= $msg . PHP_EOL;
             }
             $this->logger->write($message, $level);
@@ -229,7 +230,7 @@ class Renapi
 
     public function prepareJsonParameter($function)
     {
-        
+
         $entityBody = file_get_contents('php://input');
         $this->debug(["fn: Renapi->prepareJsonParameter.", "Received body." . $entityBody]);
         if ($entityBody == "") {
@@ -252,6 +253,7 @@ class Renapi
     {
 
         // Methods PUT, PATCH y DELETE tambien vienen por el body
+
         if (in_array($this->requested_method, ["PUT", "DELETE"])) {
             /**
              *  Revisar, ya que si el body es un form data, no estoy tomandolo bien.
@@ -261,6 +263,7 @@ class Renapi
         } else {
             $param_received = (count($_REQUEST) == 0 ? count($this->parameters_received_from_request_uri) : count($_REQUEST));
             $_PARAMS = (count($_REQUEST) == 0 ? $this->parameters_received_from_request_uri : $_REQUEST);
+            $this->debug(["fn: prepareParameters. Params received: ", $_PARAMS]);
         }
 
         $function_param_count = count($function->parameters());
@@ -273,8 +276,10 @@ class Renapi
             /** Parameters from REQUEST_URI */
             $this->validateParameterByKey($function->parameters(), $_PARAMS);
             $this->validateParameterByKey($function->optionalParameters(), $_PARAMS);
-        } else {
-            /** Parameters from GET/POST */
+        } else if ($function->parameters() != []) {
+            /** Parameters from GET/POST siempre y cuando la funcion tenga definidos que parametros espera.
+             * Si acepta cualquier entrada, se define en api.config.json params: [].
+             */
             foreach ($_PARAMS as $name => $value) {
                 if (!array_key_exists($name, $function->parameters()) && !array_key_exists($name, $function->optionalParameters())) {
                     $this->error("fn: Renapi->prepareParameters. Invalid parameter. Function: " . $function->name() . " parameter name: {$name}");
@@ -294,6 +299,12 @@ class Renapi
             }
             // Ingreso los parametros Opcionales si los hubiese.
             $this->validateParameterByName($function->optionalParameters(), $_PARAMS);
+        } else {
+            /**
+             * $function->parameters() == []
+             * Si la funcion espera un array indefinido de datos, se los paso asi tal cual llegan.
+             */
+            $this->parameters["request"] = $_PARAMS;
         }
     }
     /**
@@ -413,7 +424,7 @@ class Renapi
                 }
             }
         }
-        $this->debug($debugMessage);
+        //$this->debug($debugMessage);
     }
     /**
      * Registra una funcion en la api, si esta mal configurada devuelve el error correspondiente.
