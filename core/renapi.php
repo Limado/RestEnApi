@@ -71,6 +71,20 @@ class Renapi
                 print RenapiError::methodCallError($function, $this->requested_method);
                 die();
             }
+            /**
+             * Valido si el método reuqiere autenticacion por token.
+             */
+            $authToken = false;
+            if ($this->functions[$this->requested_function]->authentication()) {
+                $authentication = $this->getHeader('Authentication');
+                if (!$authentication) {
+                    $this->error("fn: Renapi->start authentication required but not received. Function: {$this->requested_function}");
+                    print RenapiError::authenticationRequired($function);
+                    die();
+                } else {
+                    $authToken = $authentication;
+                }
+            }
             $parameters = $function->parameters();
             $contentType = $this->getHeader('Content-Type');
             if ($contentType == "application/json") {
@@ -84,6 +98,12 @@ class Renapi
             $this->debug("fn: Renapi->start. InvalidFunction error : " . $this->requested_function);
             print RenapiError::invalidFunctionError($this->requested_function);
             die();
+        }
+        /**
+         * Si el metodo requiere autenticacion y llego en el header, lo envio como parametro antes del sendResponse.
+         */
+        if ($authToken) {
+            $this->parameters["token"] = $authToken;
         }
         $this->parameters["sendResponse"] = $this->sendResponse;
         call_user_func_array($this->requested_function, $this->parameters);
@@ -416,10 +436,11 @@ class Renapi
                 foreach ($model->actions as $action) {
 
                     $parameters = isset($action->params) ? $action->params : null;
+                    $authentication = isset($action->authentication) ? $action->authentication : false;
                     $description = isset($action->description) ? $action->description : null;
                     $returnDescription = isset($action->returnDescription) ? $action->returnDescription : null;
                     $debugMessage[] = "Registering {$model->name}->{$action->name} method {$action->method}";
-                    $function = new RenapiFunction($action->name, $action->method, $parameters, $description, $returnDescription);
+                    $function = new RenapiFunction($action->name, $action->method, $parameters, $authentication, $description, $returnDescription);
                     $this->registerFunction($function);
                 }
             }
@@ -574,6 +595,11 @@ class RenapiFunction
      * Descripcion del metodo.
      * @var string
      */
+    private $authentication;
+    /**
+     * Define si el methodo requiere autenticacion por token en el header.
+     * @var bool
+     */
     public $description;
     /**
      * Descripcion de la devolucion del metodo.
@@ -606,13 +632,14 @@ class RenapiFunction
  * @param string $return_description -> tipo de retorno. (text,json, etc)
  * @param string $description
  */
-    public function __construct($name, $method = "GET", $parameters = null, $return_description = null, $description = null)
+    public function __construct($name, $method = "GET", $parameters = null, $authentication, $description = null, $return_description = null)
     {
         $this->name($name);
         $this->method($method);
         $this->parameters($parameters);
         $this->return_description = $return_description;
         $this->description = $description;
+        $this->authentication = $authentication;
     }
     /**
      * Obtiene o establece el nombre del metodo.
@@ -689,14 +716,21 @@ class RenapiFunction
      * @return bool
      */
     public function isValid()
-    {return $this->isValid;}
+    {
+        return $this->isValid;
+    }
 
+    public function authentication()
+    {
+        return $this->authentication;
+    }
     private function setMessageAndValueState($valid, $message)
     {
         if ($this->isValid == true) {$this->isValid = $valid;}
         $this->message .= "{$message}<br/>";
         // die($this->message);
     }
+
 }
 
 /**
@@ -767,6 +801,12 @@ class RenapiError
     public static function genericError($message = "Undefined error")
     {
         $code = 6;
+        $error = array("error" => true, "code" => $code, "description" => $message);
+        return json_encode($error);
+    }
+    public static function authenticationRequired($function, $message = "Auhtentication required.")
+    {
+        $code = 7;
         $error = array("error" => true, "code" => $code, "description" => $message);
         return json_encode($error);
     }
