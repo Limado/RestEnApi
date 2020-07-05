@@ -182,8 +182,7 @@ class Renapi
      */
     private function getHeader($h)
     {
-        /** apache_request_headers alias - native PHP fucntion */
-        $reqHeaders = getallheaders();
+        $reqHeaders = Tools::getallheaders();
         $this->debug($reqHeaders);
         foreach ($reqHeaders as $header => $value) {
             if (strtolower($header) == strtolower($h)) {

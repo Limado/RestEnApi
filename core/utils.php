@@ -52,7 +52,7 @@ class ApiLogger
             $sessionId = ($this->getSessionId()) ? ' ' . $this->getSessionId() . ' ' : null;
             $body = "[{$date}]{$sessionId}{$this->getTitle()} {$level} - \"{$message}\"\n";
             $fileName = $this->getFileNamePrefix() . $this->fileName[$level];
-            
+
             $this->fileHandler = fopen($this->getPath() . $fileName, 'a');
             fwrite($this->fileHandler, $body);
             fclose($this->fileHandler);
@@ -123,22 +123,26 @@ class ApiLogger
     }
 }
 
+class Tools
+{
 /**
  * En caso que el servidor no sea apache o no reconozca la funcion
  */
-
-if (!function_exists('getallheaders'))
-{
-    function getallheaders()
+    public static function getallheaders()
     {
-           $headers = [];
-       foreach ($_SERVER as $name => $value)
-       {
-           if (substr($name, 0, 5) == 'HTTP_')
-           {
-               $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-           }
-       }
-       return $headers;
+        $contenTypes = ["content-type", "content_type", "contenttype"];
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
+            if (in_array(strtolower($name), $contenTypes)) {
+                $headers["Content-Type"] = $value;
+            }
+            if (strtolower($name) == "authentication") {
+                $headers["Authentication"] = $value;
+            }
+        }
+        return $headers;
     }
 }
