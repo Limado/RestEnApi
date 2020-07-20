@@ -106,7 +106,12 @@ class Renapi
             $this->parameters["token"] = $authToken;
         }
         $this->parameters["sendResponse"] = $this->sendResponse;
-        call_user_func_array($this->requested_function, $this->parameters);
+        try {
+            call_user_func_array($this->requested_function, $this->parameters);
+        } catch (Exception $e) {
+            $this->error($e);
+            RenapiError::genericError($e->message);
+        }
     }
     /**
      * Callable from user defined functions. User defined function last paramater
@@ -184,6 +189,7 @@ class Renapi
     {
         $reqHeaders = Tools::getallheaders();
         $this->debug($reqHeaders);
+
         foreach ($reqHeaders as $header => $value) {
             if (strtolower($header) == strtolower($h)) {
                 return $value;
@@ -271,19 +277,10 @@ class Renapi
     public function prepareParameters($function)
     {
 
-        // Methods PUT, PATCH y DELETE tambien vienen por el body
-
-        if (in_array($this->requested_method, ["PUT", "DELETE"])) {
-            /**
-             *  Revisar, ya que si el body es un form data, no estoy tomandolo bien.
-             */
-            $bodyContent = file_get_contents('php://input');
-            $param_received = 0;
-        } else {
-            $param_received = (count($_REQUEST) == 0 ? count($this->parameters_received_from_request_uri) : count($_REQUEST));
-            $_PARAMS = (count($_REQUEST) == 0 ? $this->parameters_received_from_request_uri : $_REQUEST);
-            $this->debug(["fn: prepareParameters. Params received: ", $_PARAMS]);
-        }
+       
+        $param_received = (count($_REQUEST) == 0 ? count($this->parameters_received_from_request_uri) : count($_REQUEST));
+        $_PARAMS = (count($_REQUEST) == 0 ? $this->parameters_received_from_request_uri : $_REQUEST);
+        $this->debug(["fn: prepareParameters. Params received: ", $_PARAMS]);
 
         $function_param_count = count($function->parameters());
         if ($param_received < $function_param_count) {
