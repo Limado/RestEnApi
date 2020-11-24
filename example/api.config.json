@@ -1,8 +1,8 @@
 {
-    "uri": "restapi/api",
+    "uri": "example/api",
     "models": [
         {
-            "name": "config",
+            "name": "api",
             "actions": [
                 {
                     "name": "describe",
@@ -13,7 +13,7 @@
             ]
         },
         {
-            "name": "model",
+            "name": "user",
             "actions": [
                 {
                     "name": "get",
