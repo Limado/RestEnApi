@@ -6,7 +6,9 @@
  * @package GTE_Renapi_Api
  */
 
+
 namespace RestEnApi;
+use \exception;
 
 require 'utils.php';
 class Renapi
@@ -23,6 +25,7 @@ class Renapi
     private $sendResponse;
     private $debug = false;
     private $logger;
+    private $authentication;
     /**
      * Instancia Renapi.
      * Setea el nombre y los actions y models dispoible.
@@ -43,6 +46,7 @@ class Renapi
         $this->sendResponse = array($this, 'sendResponseFunction');
         $this->setRequestedModelAndFunction();
         $this->setActions($config);
+        $this->authentication = (isset($config->authentication) ? $config->authentication : false);
     }
 
     /**
@@ -76,7 +80,7 @@ class Renapi
              */
             $authToken = false;
             if ($this->functions[$this->requested_function]->authentication()) {
-                $authentication = $this->getHeader('Authentication');
+                $authentication = $this->getHeader($this->authentication->header);
                 if (!$authentication) {
                     $this->error("fn: Renapi->start authentication required but not received. Function: {$this->requested_function}");
                     print RenapiError::authenticationRequired($function);
@@ -108,7 +112,7 @@ class Renapi
         $this->parameters["sendResponse"] = $this->sendResponse;
         try {
             call_user_func_array($this->requested_function, $this->parameters);
-        } catch (Exception $e) {
+        } catch (exception $e) {
             $this->error($e);
             RenapiError::genericError($e->message);
         }
@@ -203,7 +207,7 @@ class Renapi
      * @param mixed $codigo
      * @return void
      */
-    private function error()
+    private function error($message)
     {
         $this->logger->write($message, "ERROR");
     }
@@ -263,8 +267,8 @@ class Renapi
         } elseif ($this->validateParameter($entityBody, 'json')) {
             $this->parameters[] = $entityBody;
         } else {
-            $this->error("fn: Renapi->prepareJsonParameter. Invalid parameter type. Name: {$name} type: {$type}");
-            print RenapiError::invalidParameterTypeError($name, $type);
+            $this->error("fn: Renapi->prepareJsonParameter. Invalid parameter type.");
+            print RenapiError::invalidParameterTypeError("entityBody", "empty");
             die();
         }
     }
@@ -385,7 +389,7 @@ class Renapi
                 break;
             case "numeric":$ret = is_numeric($value);
                 break;
-            case "long":$ret = filter_var($value, FILTER_VALIDATE_LONG);
+            case "long":$ret = filter_var($value, FILTER_VALIDATE_INT);
                 break;
             case "double":$ret = is_double($value);
                 break;

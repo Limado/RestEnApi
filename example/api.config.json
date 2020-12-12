@@ -1,5 +1,9 @@
 {
     "uri": "example/api",
+    "authentication": {
+        "type": "jwt",
+        "header": "JWT-Authentication"
+    },
     "models": [
         {
             "name": "api",

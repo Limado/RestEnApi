@@ -7,7 +7,7 @@
  * @param [type] $_sendResponse
  * @return void
  */
-function describe($_sendResponse){
+function describe($json, $_sendResponse){
     $pathToConfig = realpath(dirname(__FILE__,2)).'/api.config.json';
     $configJson = json_decode(file_get_contents($pathToConfig));
     $_sendResponse($configJson);

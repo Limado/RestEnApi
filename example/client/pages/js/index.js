@@ -19,30 +19,54 @@ import Api from '../../modules/Api.js';
 })();
 
 function showActions(model) {
-    let modelsList = document.getElementById('actionList');
-
-    while (modelsList.firstChild) {
-        modelsList.removeChild(modelsList.lastChild);
+    /**
+     * Delete last clicked model action list.
+     */
+    let actionList = document.getElementById('actionList');
+    /**
+     * Add new model action list.
+     */
+    while (actionList.firstChild) {
+        actionList.removeChild(actionList.lastChild);
     }
+    console.log(model)
     model.actions.forEach(action => {
         let li = document.createElement("li");
         let a = document.createElement("a");
         a.href = "#";
         a.innerHTML = action.name;
         li.appendChild(a);
-        modelsList.appendChild(li);
+        li.addEventListener('click', () => { showActionDetail(action) });
+        actionList.appendChild(li);
     });
 }
 
 function showActionDetail(action) {
-    let modelsList = document.getElementById('actionList');
+    console.log(action);
 
-    model.actions.forEach(action => {
-        let li = document.createElement("li");
-        let a = document.createElement("a");
-        a.href = "#";
-        a.innerHTML = action.name;
-        li.appendChild(a);
-        modelsList.appendChild(li);
-    });
+    let descriptionBox = document.getElementById('actionDescription');
+    descriptionBox.innerHTML = '';
+    descriptionBox.appendChild(jsonToUL(action));
+}
+function jsonToUL(json) {
+    let ul = document.createElement('ul');
+
+    for (let property in json) {
+    
+        let li = document.createElement('li');
+        let h4 = document.createElement('h4');
+        let p = document.createElement('p');
+    
+        if (typeof json[property] != 'object') {
+            h4.innerHTML = property;
+            p.innerHTML = json[property];
+            li.appendChild(h4);
+        } else {
+            p.appendChild(jsonToUL(json[[property]]));
+        }   
+        li.appendChild(p);
+        ul.appendChild(li);     
+    }
+
+    return ul;
 }
