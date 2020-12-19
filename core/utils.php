@@ -1,6 +1,6 @@
 <?php
 
-namespace RestEnApi;
+namespace Limado\RestEnApi\Utils;
 
 class ApiLogger
 {
@@ -132,6 +132,7 @@ class Tools
     {
         $contenTypes = ["content-type", "content_type", "contenttype"];
         $headers = [];
+        
         foreach ($_SERVER as $name => $value) {
             if (substr($name, 0, 5) == 'HTTP_') {
                 $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
@@ -143,6 +144,10 @@ class Tools
                 $headers["Authentication"] = $value;
             }
         }
+
+        
+            
+        
         return $headers;
     }
 }
