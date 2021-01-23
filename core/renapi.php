@@ -8,11 +8,12 @@
 
 namespace Limado\RestEnApi;
 
-use Limado\RestEnApi\Utils\ApiLogger;
-use Limado\RestEnApi\Utils\Tools;
+use Limado\RestEnApi\ApiLogger;
+use Limado\RestEnApi\Tools;
 use \exception;
+use \Firebase\JWT\JWT;
 
-//require 'utils.php';
+require 'utils.php';
 class Renapi
 {
     private $service_name;
@@ -80,15 +81,23 @@ class Renapi
             }
             /**
              * Valido si el método reuqiere autenticacion por token.
+             * y valido la authenticacion por jwt
              */
-            $authToken = false;
+            // $authToken = false;
             if ($this->functions[$this->requested_function]->authentication()) {
                 $authentication = $this->getHeader($this->authentication->header);
                 if (!$authentication) {
                     $this->error("fn: Renapi->start authentication required but not received. Function: {$this->requested_function}");
                     RenapiError::authenticationRequired($function);
                 } else {
-                    $authToken = $authentication;
+                    $authToken = str_replace("Bearer ", "", $authentication);
+                    try {
+                        // Access is granted.
+                        $decoded = JWT::decode($authToken, $this->authentication->secret, array('HS256'));
+                    } catch (Exception $e) {
+                        // Access is denied.
+                        RenapiError::authenticationFailed($e);
+                    }
                 }
             }
             $parameters = $function->parameters();
@@ -111,12 +120,12 @@ class Renapi
          * Si el metodo requiere autenticacion y llego en el header, lo envio como parametro antes del sendResponse.
          * La funcion recibirá ($params, $token, $sendResponse)
          */
-        if ($authToken) {
-            if ($this->authentication->type == "Bearer") {
-                $authToken = str_replace("Bearer ", "", $authToken);
-            }
-            $this->parameters["token"] = $authToken;
-        }
+        // if ($authToken) {
+        //     if ($this->authentication->type == "jwt") {
+        //         $authToken = str_replace("Bearer ", "", $authToken);
+        //     }
+        //     $this->parameters["token"] = $authToken;
+        // }
         $this->parameters["sendResponse"] = $this->sendResponse;
         try {
             call_user_func_array($this->requested_function, $this->parameters);
@@ -703,7 +712,10 @@ class RenapiFunction
         if (!is_array($parameters)) {
             $this->setMessageAndValueState(false, "Invalid parameters types");
         }
-        $this->parameters = $parameters;
+        foreach ($parameters as $param) {
+            $this->parameters[$param->name] = $param->type;
+        }
+
     }
     /**
      * Establece los parametros opcionales y sus tipos.
@@ -866,6 +878,15 @@ class RenapiError
     {
         $code = 7;
         $error = array("error" => true, "code" => $code, "message" => $message);
+        http_response_code(401);
+        print json_encode($error);
+        die();
+    }
+
+    public static function authenticationFailed($exception)
+    {
+        $code = 8;
+        $error = array("error" => true, "code" => $code, "message" => $exception->getMessage());
         http_response_code(401);
         print json_encode($error);
         die();

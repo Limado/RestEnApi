@@ -1,6 +1,6 @@
 <?php
 
-namespace Limado\RestEnApi\Utils;
+namespace Limado\RestEnApi;
 
 class ApiLogger
 {
