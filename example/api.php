@@ -15,10 +15,20 @@ $configJson = json_decode(file_get_contents($pathToConfig));
 
 $server = new Renapi($configJson);
 
+
 /**
- * Definions contiene las funciones que se que se configuraron para cada model
+ * Controllers contiene las funciones que se que se configuraron para cada model
  */
-require_once "./definitions/" . $server->model . ".php";
+require_once "./controllers/" . $server->model . ".php";
+
+/**
+ * Helpers
+ */
+require_once "./helpers/Tools.php";
+
+if (file_exists("./helpers/" . strtolower($server->model) . ".php")) {
+    require_once "./helpers/" . strtolower($server->model) . ".php";
+}
 
 /***************************************************************/
 $server->start();

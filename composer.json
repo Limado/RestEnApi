@@ -1,5 +1,6 @@
 {
     "name": "eminoli/restenapi",
+    "version": "2.0.0",
     "type": "framework",
     "description": "Really litle framework to easily create restfull api.",
     "keywords": ["rest","restfull","api"],
