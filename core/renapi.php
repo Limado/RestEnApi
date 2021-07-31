@@ -190,7 +190,7 @@ class Renapi
                 $fname = $arr[1] == "" ? "describe" : $arr[1];
             }
             if (count($arr) > 2) {
-                $this->parameters_received_from_request_uri = explode('/', $arr[2]);
+                $this->parameters_received_from_request_uri = array_slice($arr, 2);
                 $this->parameters_from_uri = true;
             }
         } else {
