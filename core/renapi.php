@@ -179,7 +179,8 @@ class Renapi
             //Modificar para volver a usar el home -> asi no está funcionando.
             //uri= http://ip/api/model/function/getParameter
             //$arr[0] = model, $arr[1] = function, $arr[2] = parameter (GET/DELETE Only)
-
+            $this->debug($rURI);
+            $this->debug($arr);
             $arr = explode('/', $arr[1]);
             $this->model = "api";
             $fname = "describe";
